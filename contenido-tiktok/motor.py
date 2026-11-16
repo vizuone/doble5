@@ -315,3 +315,45 @@ def render(vdir, build):
         ff.stdin.write(img.tobytes())
     ff.stdin.close(); ff.wait()
     print("OK", out, f"{dur:.1f}s")
+
+
+# ---------- cierre reutilizable: caja de comentario que se escribe sola ----------
+def make_cta(t_comenta, word, title):
+    cx = W // 2
+    t_type = t_comenta + 0.2
+    sent = t_type + 0.08 * len(word) + 0.25
+
+    def draw(img, d, t, lt):
+        e = back_out(lt / 0.4)
+        y0 = 560 + (1 - e) * 300
+        text_c(d, (cx, 420), title, font(64), FG)
+        d.rounded_rectangle([90, y0, W - 90, y0 + 150], 75, fill=(250, 250, 250))
+        nch = int(clamp((t - t_type) / 0.08, 0, len(word)))
+        typed = word[:nch]
+        if typed:
+            d.text((150, y0 + 75), typed, font=font(66), fill=(20, 20, 20), anchor="lm")
+        else:
+            d.text((150, y0 + 75), "Agregá un comentario…", font=font(42, "Semi"), fill=(150, 150, 155), anchor="lm")
+        if (t * 2) % 1 < 0.5:
+            cxp = 150 + d.textlength(typed, font=font(66)) + 6
+            d.line([(cxp, y0 + 40), (cxp, y0 + 110)], fill=BLUE, width=5)
+        bc = BLUE if nch == len(word) else (180, 180, 190)
+        r = 52 * (0.85 if sent <= t < sent + 0.15 else 1)
+        d.ellipse([W - 165 - r, y0 + 75 - r, W - 165 + r, y0 + 75 + r], fill=bc)
+        d.polygon([(W - 190, y0 + 50), (W - 135, y0 + 75), (W - 190, y0 + 100)], fill=(255, 255, 255))
+        if t >= sent:
+            ripple(d, W - 165, y0 + 75, (t - sent) / 0.5, BLUE)
+            k = back_out(clamp((t - sent) / 0.3))
+            d.rounded_rectangle([90, y0 + 210, W - 90, y0 + 210 + 150 * k], 30, fill=CARD)
+            if k > 0.6:
+                d.ellipse([120, y0 + 245, 200, y0 + 325], fill=(255, 140, 60))
+                d.text((225, y0 + 262), "vos", font=font(32, "Bold"), fill=DIM, anchor="lm")
+                d.text((225, y0 + 310), word, font=font(52), fill=FG, anchor="lm")
+                heart(d, W - 150, y0 + 285, 30 * back_out(clamp((t - sent - 0.25) / 0.3)), (255, 55, 95))
+        by = 1200 + math.sin(t * 9) * 25
+        d.polygon([(W - 150, by), (W - 90, by), (W - 90, by + 70), (W - 50, by + 70), (W - 120, by + 150),
+                   (W - 190, by + 70), (W - 150, by + 70)], fill=ACCENT)
+
+    sfx_ev = [(t_type + 0.08 * i, "type", 0.8) for i in range(len(word))]
+    sfx_ev += [(sent, "pop", 1.0), (sent + 0.5, "ding", 0.8)]
+    return draw, sfx_ev
